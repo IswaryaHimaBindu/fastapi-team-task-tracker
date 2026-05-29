@@ -18,6 +18,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (storedToken) {
       setToken(storedToken);
     }
+
+    const handleLogout = () => setToken(null);
+    window.addEventListener('logout', handleLogout);
+    return () => window.removeEventListener('logout', handleLogout);
   }, []);
 
   const login = async (email: string, password: string) => {
