@@ -59,3 +59,8 @@ class TaskResponse(TaskBase):
 class TaskListResponse(BaseModel):
     items: list[TaskResponse]
     total: int
+    page: int
+    limit: int
+
+    class Config:
+        from_attributes = True

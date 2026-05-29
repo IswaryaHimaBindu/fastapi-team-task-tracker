@@ -1,8 +1,12 @@
+from datetime import date
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.response import StandardResponse
+from app.models import PriorityEnum, TaskStatusEnum
 from app.schemas.task import (
     TaskCreate,
     TaskListResponse,
@@ -24,12 +28,24 @@ def create_task(payload: TaskCreate, db: Session = Depends(get_db)) -> StandardR
 
 @router.get("/", response_model=StandardResponse[TaskListResponse])
 def list_tasks(
-    skip: int = Query(0, ge=0),
+    page: int = Query(1, ge=1),
     limit: int = Query(100, ge=1, le=200),
+    status: Optional[TaskStatusEnum] = Query(None),
+    priority: Optional[PriorityEnum] = Query(None),
+    assignee_id: Optional[int] = Query(None, ge=1),
+    due_date: Optional[date] = Query(None),
     db: Session = Depends(get_db),
 ) -> StandardResponse[TaskListResponse]:
-    tasks = task_service.list_tasks(db, skip=skip, limit=limit)
-    return StandardResponse(data=TaskListResponse(items=tasks, total=len(tasks)))
+    tasks, total = task_service.list_tasks(
+        db,
+        page=page,
+        limit=limit,
+        status=status,
+        priority=priority,
+        assignee_id=assignee_id,
+        due_date=due_date,
+    )
+    return StandardResponse(data=TaskListResponse(items=tasks, total=total, page=page, limit=limit))
 
 
 @router.get("/{task_id}", response_model=StandardResponse[TaskResponse])

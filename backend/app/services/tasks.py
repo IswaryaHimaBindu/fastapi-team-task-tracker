@@ -1,9 +1,10 @@
+from datetime import date
 from typing import Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models import Task, TaskStatusEnum
+from app.models import PriorityEnum, Task, TaskStatusEnum
 from app.schemas.task import TaskCreate, TaskUpdate
 
 
@@ -31,8 +32,30 @@ class TaskService:
             )
         return task
 
-    def list_tasks(self, db: Session, skip: int = 0, limit: int = 100) -> list[Task]:
-        return db.query(Task).offset(skip).limit(limit).all()
+    def list_tasks(
+        self,
+        db: Session,
+        page: int = 1,
+        limit: int = 100,
+        status: Optional[TaskStatusEnum] = None,
+        priority: Optional[PriorityEnum] = None,
+        assignee_id: Optional[int] = None,
+        due_date: Optional[date] = None,
+    ) -> tuple[list[Task], int]:
+        query = db.query(Task)
+
+        if status is not None:
+            query = query.filter(Task.status == status)
+        if priority is not None:
+            query = query.filter(Task.priority == priority)
+        if assignee_id is not None:
+            query = query.filter(Task.assignee_id == assignee_id)
+        if due_date is not None:
+            query = query.filter(Task.due_date == due_date)
+
+        total = query.count()
+        items = query.offset((page - 1) * limit).limit(limit).all()
+        return items, total
 
     def update_task(self, db: Session, task_id: int, payload: TaskUpdate) -> Task:
         task = self.get_task(db, task_id)
