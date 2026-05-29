@@ -3,7 +3,7 @@ from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models import Task
+from app.models import Task, TaskStatusEnum
 from app.schemas.task import TaskCreate, TaskUpdate
 
 
@@ -48,6 +48,49 @@ class TaskService:
             task.creator_id = payload.creator_id
         if payload.due_date is not None:
             task.due_date = payload.due_date
+        db.add(task)
+        db.commit()
+        db.refresh(task)
+        return task
+
+    def update_task_status(
+        self,
+        db: Session,
+        task_id: int,
+        new_status: TaskStatusEnum,
+        acting_user_id: int,
+        acting_user_role: str,
+    ) -> Task:
+        task = self.get_task(db, task_id)
+
+        if task.assignee_id != acting_user_id and acting_user_role != "MANAGER":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the assignee or a manager may update task status.",
+            )
+
+        current_status = TaskStatusEnum(task.status)
+        if current_status == new_status:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Task is already in the requested status.",
+            )
+
+        allowed_transitions = {
+            TaskStatusEnum.TODO: {TaskStatusEnum.IN_PROGRESS, TaskStatusEnum.BLOCKED},
+            TaskStatusEnum.IN_PROGRESS: {TaskStatusEnum.IN_REVIEW, TaskStatusEnum.BLOCKED},
+            TaskStatusEnum.IN_REVIEW: {TaskStatusEnum.DONE, TaskStatusEnum.BLOCKED},
+            TaskStatusEnum.DONE: set(),
+            TaskStatusEnum.BLOCKED: set(),
+        }
+
+        if new_status not in allowed_transitions.get(current_status, set()):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid status transition from {current_status.value} to {new_status.value}.",
+            )
+
+        task.status = new_status
         db.add(task)
         db.commit()
         db.refresh(task)

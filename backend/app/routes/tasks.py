@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -7,6 +7,7 @@ from app.schemas.task import (
     TaskCreate,
     TaskListResponse,
     TaskResponse,
+    TaskStatusUpdate,
     TaskUpdate,
 )
 from app.services.tasks import TaskService
@@ -40,6 +41,31 @@ def get_task(task_id: int, db: Session = Depends(get_db)) -> StandardResponse[Ta
 @router.put("/{task_id}", response_model=StandardResponse[TaskResponse])
 def update_task(task_id: int, payload: TaskUpdate, db: Session = Depends(get_db)) -> StandardResponse[TaskResponse]:
     task = task_service.update_task(db, task_id, payload)
+    return StandardResponse(data=task)
+
+
+@router.patch("/{task_id}/status", response_model=StandardResponse[TaskResponse])
+def update_task_status(
+    request: Request,
+    task_id: int,
+    payload: TaskStatusUpdate,
+    db: Session = Depends(get_db),
+) -> StandardResponse[TaskResponse]:
+    user_id = request.state.user_id
+    user_role = request.state.user_role
+    if user_id is None or user_role is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User credentials are required to update task status.",
+        )
+
+    task = task_service.update_task_status(
+        db,
+        task_id,
+        payload.status,
+        int(user_id),
+        user_role,
+    )
     return StandardResponse(data=task)
 
 

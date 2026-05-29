@@ -4,6 +4,8 @@ from typing import Generic, TypeVar
 from pydantic import BaseModel, Field, validator
 from pydantic.generics import GenericModel
 
+from app.models import TaskStatusEnum
+
 
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=1)
@@ -37,6 +39,10 @@ class TaskUpdate(BaseModel):
         if value is not None and value <= date.today():
             raise ValueError("due_date must be a future date")
         return value
+
+
+class TaskStatusUpdate(BaseModel):
+    status: TaskStatusEnum
 
 
 class TaskResponse(TaskBase):
