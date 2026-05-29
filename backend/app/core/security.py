@@ -25,11 +25,12 @@ def create_access_token(subject: str, role: str) -> str:
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
 
 
-def create_refresh_token(subject: str) -> str:
+def create_refresh_token(subject: str, token_id: str) -> str:
     expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     payload = {
         "sub": subject,
         "type": "refresh",
+        "jti": token_id,
         "exp": expire,
     }
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)

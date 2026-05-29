@@ -139,6 +139,7 @@ class RefreshToken(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    token_id = Column(String(36), nullable=False, unique=True, index=True)
     token = Column(String(512), nullable=False, unique=True, index=True)
     issued_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     expires_at = Column(DateTime(timezone=True), nullable=False)

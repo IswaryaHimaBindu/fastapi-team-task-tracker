@@ -21,6 +21,10 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
+
 class UserResponse(BaseModel):
     id: int
     first_name: str

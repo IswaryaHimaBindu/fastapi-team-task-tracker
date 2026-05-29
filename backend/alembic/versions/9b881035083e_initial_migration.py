@@ -59,6 +59,7 @@ def upgrade() -> None:
     op.create_table('refresh_tokens',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('token_id', sa.String(length=36), nullable=False),
     sa.Column('token', sa.String(length=512), nullable=False),
     sa.Column('issued_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
@@ -67,6 +68,7 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_refresh_tokens_id'), 'refresh_tokens', ['id'], unique=False)
+    op.create_index(op.f('ix_refresh_tokens_token_id'), 'refresh_tokens', ['token_id'], unique=True)
     op.create_index(op.f('ix_refresh_tokens_token'), 'refresh_tokens', ['token'], unique=True)
     op.create_table('tasks',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -100,6 +102,7 @@ def downgrade() -> None:
     op.drop_index('ix_tasks_assignee_id', table_name='tasks')
     op.drop_table('tasks')
     op.drop_index(op.f('ix_refresh_tokens_token'), table_name='refresh_tokens')
+    op.drop_index(op.f('ix_refresh_tokens_token_id'), table_name='refresh_tokens')
     op.drop_index(op.f('ix_refresh_tokens_id'), table_name='refresh_tokens')
     op.drop_table('refresh_tokens')
     op.drop_index(op.f('ix_users_id'), table_name='users')
