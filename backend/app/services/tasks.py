@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, Tuple
 
 from fastapi import HTTPException, status
 from sqlalchemy import and_, case, func
@@ -64,7 +64,7 @@ class TaskService:
         items = query.offset((page - 1) * limit).limit(limit).all()
         return items, total
 
-    def update_task(self, db: Session, task_id: int, payload: TaskUpdate) -> Task:
+    def update_task(self, db: Session, task_id: int, payload: TaskUpdate) -> Tuple[Task, Optional[int]]:
         task = self.get_task(db, task_id)
         previous_assignee_id = task.assignee_id
 
@@ -86,7 +86,7 @@ class TaskService:
         db.refresh(task)
 
         self._invalidate_task_list_cache(previous_assignee_id, task.assignee_id)
-        return task
+        return task, previous_assignee_id
 
     def update_task_status(
         self,

@@ -15,6 +15,7 @@ from app.schemas.task import (
     TaskStatusUpdate,
     TaskUpdate,
 )
+from app.services.notifications import notification_service
 from app.services.tasks import TaskService
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
@@ -75,13 +76,15 @@ def get_task(task_id: int, db: Session = Depends(get_db)) -> StandardResponse[Ta
 
 
 @router.put("/{task_id}", response_model=StandardResponse[TaskResponse])
-def update_task(task_id: int, payload: TaskUpdate, db: Session = Depends(get_db)) -> StandardResponse[TaskResponse]:
-    task = task_service.update_task(db, task_id, payload)
+async def update_task(task_id: int, payload: TaskUpdate, db: Session = Depends(get_db)) -> StandardResponse[TaskResponse]:
+    task, previous_assignee_id = task_service.update_task(db, task_id, payload)
+    if task.assignee_id != previous_assignee_id:
+        await notification_service.notify_task_reassigned(previous_assignee_id, task.assignee_id, task)
     return StandardResponse(data=task)
 
 
 @router.patch("/{task_id}/status", response_model=StandardResponse[TaskResponse])
-def update_task_status(
+async def update_task_status(
     request: Request,
     task_id: int,
     payload: TaskStatusUpdate,
@@ -102,6 +105,7 @@ def update_task_status(
         int(user_id),
         user_role,
     )
+    await notification_service.notify_task_status_change(task)
     return StandardResponse(data=task)
 
 
