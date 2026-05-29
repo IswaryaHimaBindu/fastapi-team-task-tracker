@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 from starlette.middleware import Middleware
 
+from app.middleware.error_handler import GlobalExceptionHandlerMiddleware
 from app.middleware.rbac import RBACMiddleware
 from app.routes import router
 
-middleware = [Middleware(RBACMiddleware)]
+middleware = [
+    Middleware(GlobalExceptionHandlerMiddleware),
+    Middleware(RBACMiddleware),
+]
 
 app = FastAPI(title="Task Tracker API", middleware=middleware)
 app.include_router(router)
