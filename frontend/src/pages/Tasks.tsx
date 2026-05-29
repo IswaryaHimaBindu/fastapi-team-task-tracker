@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
-import TaskCard from '../components/TaskCard';
+import TaskBoard from '../components/TaskBoard';
 import { Task } from '../types';
 
 function Tasks() {
@@ -29,19 +29,15 @@ function Tasks() {
   return (
     <main className="page-container">
       <section className="page-header">
-        <h1>Tasks</h1>
-        <p>View and manage your assigned tasks.</p>
+        <h1>Task Board</h1>
+        <p>Organize tasks by workflow stage and track progress across the team.</p>
       </section>
 
       {loading && <p>Loading tasks…</p>}
       {error && <p className="error-text">{error}</p>}
       {!loading && tasks.length === 0 && <p>No tasks available.</p>}
 
-      <div className="task-grid">
-        {tasks.map((task) => (
-          <TaskCard key={task.id} task={task} />
-        ))}
-      </div>
+      {!loading && tasks.length > 0 && <TaskBoard tasks={tasks} />}
     </main>
   );
 }
