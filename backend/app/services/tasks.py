@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.cache import cache_service
 from app.models import PriorityEnum, Task, TaskStatusEnum
 from app.schemas.task import TaskCreate, TaskUpdate
 
@@ -21,6 +22,8 @@ class TaskService:
         db.add(task)
         db.commit()
         db.refresh(task)
+        if task.assignee_id is not None:
+            cache_service.delete_task_list(task.assignee_id)
         return task
 
     def get_task(self, db: Session, task_id: int) -> Task:
@@ -59,6 +62,8 @@ class TaskService:
 
     def update_task(self, db: Session, task_id: int, payload: TaskUpdate) -> Task:
         task = self.get_task(db, task_id)
+        previous_assignee_id = task.assignee_id
+
         if payload.title is not None:
             task.title = payload.title
         if payload.description is not None:
@@ -71,9 +76,16 @@ class TaskService:
             task.creator_id = payload.creator_id
         if payload.due_date is not None:
             task.due_date = payload.due_date
+
         db.add(task)
         db.commit()
         db.refresh(task)
+
+        if previous_assignee_id is not None:
+            cache_service.delete_task_list(previous_assignee_id)
+        if task.assignee_id is not None:
+            cache_service.delete_task_list(task.assignee_id)
+
         return task
 
     def update_task_status(
@@ -117,9 +129,16 @@ class TaskService:
         db.add(task)
         db.commit()
         db.refresh(task)
+
+        if task.assignee_id is not None:
+            cache_service.delete_task_list(task.assignee_id)
+
         return task
 
     def delete_task(self, db: Session, task_id: int) -> None:
         task = self.get_task(db, task_id)
+        assignee_id = task.assignee_id
         db.delete(task)
         db.commit()
+        if assignee_id is not None:
+            cache_service.delete_task_list(assignee_id)

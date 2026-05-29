@@ -4,6 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 
+from app.core.cache import cache_service
 from app.core.database import get_db
 from app.core.response import StandardResponse
 from app.models import PriorityEnum, TaskStatusEnum
@@ -36,6 +37,20 @@ def list_tasks(
     due_date: Optional[date] = Query(None),
     db: Session = Depends(get_db),
 ) -> StandardResponse[TaskListResponse]:
+    should_cache = (
+        assignee_id is not None
+        and page == 1
+        and limit == 100
+        and status is None
+        and priority is None
+        and due_date is None
+    )
+
+    if should_cache:
+        cached = cache_service.get_task_list(assignee_id)
+        if cached is not None:
+            return StandardResponse(data=TaskListResponse.model_validate(cached))
+
     tasks, total = task_service.list_tasks(
         db,
         page=page,
@@ -45,7 +60,12 @@ def list_tasks(
         assignee_id=assignee_id,
         due_date=due_date,
     )
-    return StandardResponse(data=TaskListResponse(items=tasks, total=total, page=page, limit=limit))
+    response = TaskListResponse(items=tasks, total=total, page=page, limit=limit)
+
+    if should_cache:
+        cache_service.set_task_list(assignee_id, response.model_dump())
+
+    return StandardResponse(data=response)
 
 
 @router.get("/{task_id}", response_model=StandardResponse[TaskResponse])
