@@ -4,6 +4,7 @@ from starlette.middleware import Middleware
 from app.middleware.error_handler import GlobalExceptionHandlerMiddleware
 from app.middleware.rbac import RBACMiddleware
 from app.routes import router
+from app.routes.analytics import router as analytics_router
 
 middleware = [
     Middleware(GlobalExceptionHandlerMiddleware),
@@ -12,6 +13,7 @@ middleware = [
 
 app = FastAPI(title="Task Tracker API", middleware=middleware)
 app.include_router(router)
+app.include_router(analytics_router)
 
 
 @app.get("/", summary="Health check")

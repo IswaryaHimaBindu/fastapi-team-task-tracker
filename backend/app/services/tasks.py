@@ -1,12 +1,13 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi import HTTPException, status
+from sqlalchemy import and_, case, func
 from sqlalchemy.orm import Session
 
 from app.core.cache import cache_service
-from app.models import PriorityEnum, Task, TaskStatusEnum
-from app.schemas.task import TaskCreate, TaskUpdate
+from app.models import PriorityEnum, Task, TaskStatusEnum, User
+from app.schemas.task import TaskAnalyticsItem, TaskCreate, TaskUpdate
 
 
 class TaskService:
@@ -125,6 +126,8 @@ class TaskService:
             )
 
         task.status = new_status
+        if new_status == TaskStatusEnum.DONE:
+            task.completed_at = datetime.utcnow()
         db.add(task)
         db.commit()
         db.refresh(task)
@@ -138,3 +141,64 @@ class TaskService:
         db.delete(task)
         db.commit()
         self._invalidate_task_list_cache(assignee_id)
+
+    def get_task_analytics(self, db: Session) -> list[TaskAnalyticsItem]:
+        completed_duration_seconds = func.date_part(
+            'epoch',
+            Task.completed_at - Task.created_at,
+        )
+
+        query = (
+            db.query(
+                Task.assignee_id.label('user_id'),
+                User.first_name,
+                User.last_name,
+                func.sum(
+                    case(
+                        [
+                            (
+                                and_(
+                                    Task.due_date < func.current_date(),
+                                    Task.status != TaskStatusEnum.DONE,
+                                ),
+                                1,
+                            )
+                        ],
+                        else_=0,
+                    )
+                ).label('overdue_count'),
+                func.avg(
+                    case(
+                        [
+                            (
+                                and_(
+                                    Task.status == TaskStatusEnum.DONE,
+                                    Task.completed_at.isnot(None),
+                                ),
+                                completed_duration_seconds,
+                            )
+                        ],
+                        else_=None,
+                    )
+                ).label('avg_completion_seconds'),
+            )
+            .join(User, User.id == Task.assignee_id)
+            .filter(Task.assignee_id.isnot(None))
+            .group_by(Task.assignee_id, User.first_name, User.last_name)
+        )
+
+        results = []
+        for row in query:
+            average_days = None
+            if row.avg_completion_seconds is not None:
+                average_days = float(row.avg_completion_seconds) / 86400.0
+            results.append(
+                TaskAnalyticsItem(
+                    user_id=row.user_id,
+                    first_name=row.first_name,
+                    last_name=row.last_name,
+                    overdue_count=int(row.overdue_count or 0),
+                    average_completion_days=average_days,
+                )
+            )
+        return results

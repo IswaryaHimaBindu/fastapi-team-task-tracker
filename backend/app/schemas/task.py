@@ -49,8 +49,27 @@ class TaskResponse(TaskBase):
     id: int
     status: str
     priority: str
+    completed_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class TaskAnalyticsItem(BaseModel):
+    user_id: int
+    first_name: str
+    last_name: str
+    overdue_count: int
+    average_completion_days: float | None = None
+
+    class Config:
+        from_attributes = True
+
+
+class TaskAnalyticsResponse(BaseModel):
+    items: list[TaskAnalyticsItem]
 
     class Config:
         from_attributes = True
