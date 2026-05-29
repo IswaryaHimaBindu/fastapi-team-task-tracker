@@ -1,0 +1,4 @@
+p, ADMIN, /api/*, GET|POST|PUT|DELETE
+p, MANAGER, /api/projects*, GET|POST|PUT|DELETE
+p, MANAGER, /api/tasks*, GET|POST|PUT|DELETE
+p, MEMBER, /api/tasks*, GET
