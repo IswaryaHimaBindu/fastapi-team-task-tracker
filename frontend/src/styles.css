@@ -130,6 +130,84 @@ button:disabled {
   margin-bottom: 1.5rem;
 }
 
+.filters-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 1rem;
+}
+
+.filter-group {
+  display: grid;
+  gap: 1rem;
+  flex: 1 1 320px;
+}
+
+.filter-group label {
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.filters-panel select,
+.filters-panel input {
+  width: 100%;
+}
+
+.filter-clear {
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: transparent;
+  color: #f8fafc;
+  cursor: pointer;
+  min-width: 140px;
+}
+
+.filter-clear:hover {
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.notifications-panel {
+  display: grid;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.notification-card {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(34, 42, 61, 0.95);
+  border: 1px solid rgba(100, 116, 139, 0.15);
+}
+
+.notification-card strong {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 1rem;
+}
+
+.pagination-bar button {
+  width: auto;
+  min-width: 100px;
+}
+
 .board-grid {
   display: grid;
   gap: 1rem;
