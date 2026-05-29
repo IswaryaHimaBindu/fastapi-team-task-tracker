@@ -10,6 +10,10 @@ from app.schemas.task import TaskCreate, TaskUpdate
 
 
 class TaskService:
+    def _invalidate_task_list_cache(self, *assignee_ids: Optional[int]) -> None:
+        for assignee_id in {assignee_id for assignee_id in assignee_ids if assignee_id is not None}:
+            cache_service.delete_task_list(assignee_id)
+
     def create_task(self, db: Session, payload: TaskCreate) -> Task:
         task = Task(
             title=payload.title,
@@ -22,8 +26,7 @@ class TaskService:
         db.add(task)
         db.commit()
         db.refresh(task)
-        if task.assignee_id is not None:
-            cache_service.delete_task_list(task.assignee_id)
+        self._invalidate_task_list_cache(task.assignee_id)
         return task
 
     def get_task(self, db: Session, task_id: int) -> Task:
@@ -81,11 +84,7 @@ class TaskService:
         db.commit()
         db.refresh(task)
 
-        if previous_assignee_id is not None:
-            cache_service.delete_task_list(previous_assignee_id)
-        if task.assignee_id is not None:
-            cache_service.delete_task_list(task.assignee_id)
-
+        self._invalidate_task_list_cache(previous_assignee_id, task.assignee_id)
         return task
 
     def update_task_status(
@@ -130,9 +129,7 @@ class TaskService:
         db.commit()
         db.refresh(task)
 
-        if task.assignee_id is not None:
-            cache_service.delete_task_list(task.assignee_id)
-
+        self._invalidate_task_list_cache(task.assignee_id)
         return task
 
     def delete_task(self, db: Session, task_id: int) -> None:
@@ -140,5 +137,4 @@ class TaskService:
         assignee_id = task.assignee_id
         db.delete(task)
         db.commit()
-        if assignee_id is not None:
-            cache_service.delete_task_list(assignee_id)
+        self._invalidate_task_list_cache(assignee_id)
