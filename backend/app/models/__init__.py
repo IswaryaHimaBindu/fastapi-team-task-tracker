@@ -1,8 +1,7 @@
 """Data models for the Task Tracker backend."""
 
 import enum
-from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from sqlalchemy import (
     Boolean,
@@ -17,7 +16,7 @@ from sqlalchemy import (
     Text,
     func,
 )
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, relationship
 
 from ..core.database import Base
 
@@ -51,8 +50,8 @@ class Organization(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
-    users: List["User"] = relationship("User", back_populates="organization", cascade="all, delete-orphan")
-    projects: List["Project"] = relationship("Project", back_populates="organization", cascade="all, delete-orphan")
+    users: Mapped[list["User"]] = relationship("User", back_populates="organization", cascade="all, delete-orphan")
+    projects: Mapped[list["Project"]] = relationship("Project", back_populates="organization", cascade="all, delete-orphan")
 
 
 class User(Base):
@@ -69,20 +68,20 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
-    organization: "Organization" = relationship("Organization", back_populates="users")
-    assigned_tasks: List["Task"] = relationship(
+    organization: Mapped["Organization"] = relationship("Organization", back_populates="users")
+    assigned_tasks: Mapped[list["Task"]] = relationship(
         "Task",
         back_populates="assignee",
         foreign_keys="Task.assignee_id",
         cascade="all, delete-orphan",
     )
-    created_tasks: List["Task"] = relationship(
+    created_tasks: Mapped[list["Task"]] = relationship(
         "Task",
         back_populates="creator",
         foreign_keys="Task.creator_id",
         cascade="all, delete-orphan",
     )
-    refresh_tokens: List["RefreshToken"] = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    refresh_tokens: Mapped[list["RefreshToken"]] = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
 
 
 class Project(Base):
@@ -98,8 +97,8 @@ class Project(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
-    organization: "Organization" = relationship("Organization", back_populates="projects")
-    tasks: List["Task"] = relationship("Task", back_populates="project", cascade="all, delete-orphan")
+    organization: Mapped["Organization"] = relationship("Organization", back_populates="projects")
+    tasks: Mapped[list["Task"]] = relationship("Task", back_populates="project", cascade="all, delete-orphan")
 
 
 class Task(Base):
@@ -122,13 +121,13 @@ class Task(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
 
-    project: "Project" = relationship("Project", back_populates="tasks")
-    assignee: Optional["User"] = relationship(
+    project: Mapped["Project"] = relationship("Project", back_populates="tasks")
+    assignee: Mapped[Optional["User"]] = relationship(
         "User",
         back_populates="assigned_tasks",
         foreign_keys=[assignee_id],
     )
-    creator: Optional["User"] = relationship(
+    creator: Mapped[Optional["User"]] = relationship(
         "User",
         back_populates="created_tasks",
         foreign_keys=[creator_id],
@@ -145,4 +144,4 @@ class RefreshToken(Base):
     expires_at = Column(DateTime(timezone=True), nullable=False)
     revoked = Column(Boolean, default=False, nullable=False)
 
-    user: "User" = relationship("User", back_populates="refresh_tokens")
+    user: Mapped["User"] = relationship("User", back_populates="refresh_tokens")
